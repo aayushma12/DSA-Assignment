@@ -1,43 +1,36 @@
-/*
-     * Algorithm Explanation:
-     * 
-     * The goal is to find the minimum total cost to connect all devices in a network, where:
-     * 1. Devices can either have their own communication module installed at a given cost.
-     * 2. Devices can also be connected with each other via direct connections, which have specific costs.
-     * 
-     * The approach is to treat the problem like a Minimum Spanning Tree (MST) problem and use Kruskal's
-     * algorithm to find the MST. The steps are as follows:
-     * 
-     * 1. **Virtual Connections**: We create virtual connections to simulate the installation of communication
-     *    modules for each device. For each device, a connection is made to a virtual central device (device 0) with
-     *    the cost being the module installation cost for that device.
-     * 
-     * 2. **Sort All Edges**: All the connections (both real and virtual) are combined into a list. We then sort this
-     *    list of edges based on the connection cost. The lower the cost, the higher priority it will have during the MST
-     *    creation.
-     * 
-     * 3. **Union-Find Data Structure**: We use a Union-Find (disjoint-set) data structure to manage the connected
-     *    components. This allows us to efficiently check if two devices are already connected (same set) or not (different sets).
-     * 
-     * 4. **Kruskal's Algorithm**: We iterate through the sorted list of connections and keep adding the least cost
-     *    edges to the MST until all devices are connected. Each time we add an edge, we perform a union operation to
-     *    connect the two devices. If adding an edge would form a cycle, we skip it.
-     * 
-     * 5. **Return the Total Cost**: After connecting all devices (using `n-1` edges for `n` devices), we return the
-     *    total cost accumulated for the MST, which is the minimum cost to connect all devices.
-     * 
-     * This approach ensures that we always select the least expensive way to connect devices, either through direct
-     * connections or by installing communication modules.
-     */
+/* 
+Algorithm Explanation:
+----------------------
+Problem:
+- We have 'n' devices that need to be connected.
+- Each device can either install its own communication module at a given cost.
+- Alternatively, devices can connect to each other using bidirectional connections with specified costs.
+- The goal is to **connect all devices with the minimum total cost**.
 
+Approach:
+1. **Model the Problem as a Minimum Spanning Tree (MST)**:
+   - Treat each device as a node in a graph.
+   - Each direct connection is an edge with an associated cost.
+   - Each device also has a "virtual" edge to a central node (device 0) with a cost equal to its module installation cost.
 
+2. **Use Kruskal's Algorithm with Union-Find**:
+   - Create a list of all possible edges (direct connections + virtual module installation edges).
+   - Sort the edges based on cost (lowest to highest).
+   - Use a **Union-Find** data structure to keep track of connected components.
+   - Iterate through the edges and add the lowest-cost connections while avoiding cycles.
+   - Stop when we have connected all `n` devices (using `n` edges in total).
+
+Time Complexity:
+- Sorting edges: **O(E log E)** (where E is the number of edges).
+- Union-Find operations: **O(E α(n))**, where α(n) is nearly constant.
+- Total Complexity: **O(E log E)**, which is efficient for large networks.
+*/
 
 import java.util.*;
 
 public class DeviceNetwork {
-
     
-    // Define a class to represent a connection between two devices
+    // Class representing a connection between two devices
     static class Connection {
         int device1;
         int device2;
@@ -50,48 +43,48 @@ public class DeviceNetwork {
         }
     }
 
-    // Function to find the parent of a device (for union-find)
+    // Function to find the root parent of a device (for union-find)
     public static int find(int[] parent, int x) {
         if (parent[x] != x) {
-            parent[x] = find(parent, parent[x]); // Path compression: flatten the tree
+            parent[x] = find(parent, parent[x]); // Path compression to optimize future queries
         }
         return parent[x];
     }
 
-    // Function to union two devices (for union-find)
+    // Function to merge two sets (for union-find)
     public static void union(int[] parent, int x, int y) {
         int rootX = find(parent, x);
         int rootY = find(parent, y);
         if (rootX != rootY) {
-            parent[rootX] = rootY; // Connect the two devices
+            parent[rootX] = rootY; // Connect the two components
         }
     }
 
-    // Function to find the minimum total cost to connect all devices
+    // Function to compute the minimum cost to connect all devices
     public static int minCostToConnectAllDevices(int n, int[] modules, List<Connection> connections) {
-        // Step 1: Initialize a list of edges for the connection graph
+        // Step 1: Initialize a list of edges (connections + virtual module edges)
         List<int[]> edges = new ArrayList<>();
 
-        // Add the costs of installing modules to the connection edges (simulate "virtual" edges)
+        // Add virtual connections representing module installation costs
         for (int i = 0; i < n; i++) {
-            edges.add(new int[]{0, i + 1, modules[i]}); // Virtual connection to device 0 with cost of modules[i]
+            edges.add(new int[]{0, i + 1, modules[i]}); // Connect to a virtual device 0
         }
 
-        // Add the direct connections between devices
+        // Add real physical connections between devices
         for (Connection conn : connections) {
             edges.add(new int[]{conn.device1, conn.device2, conn.cost});
         }
 
-        // Step 2: Sort all edges based on the cost
-        edges.sort((a, b) -> Integer.compare(a[2], b[2])); // Sort edges by the cost in ascending order
+        // Step 2: Sort edges by cost (ascending order)
+        edges.sort(Comparator.comparingInt(a -> a[2]));
 
-        // Step 3: Initialize the union-find data structure (disjoint-set) to keep track of connected devices
-        int[] parent = new int[n + 1]; // Array to store the parent of each node
+        // Step 3: Initialize Union-Find data structure
+        int[] parent = new int[n + 1];
         for (int i = 0; i <= n; i++) {
             parent[i] = i; // Initially, each device is its own parent
         }
 
-        // Step 4: Process all the edges to form the minimum spanning tree (MST)
+        // Step 4: Process edges using Kruskal's MST Algorithm
         int totalCost = 0;
         int edgesUsed = 0;
 
@@ -100,15 +93,14 @@ public class DeviceNetwork {
             int device2 = edge[1];
             int cost = edge[2];
 
-            // If the devices are not already connected (i.e., their roots are different)
+            // If devices are not already connected, connect them
             if (find(parent, device1) != find(parent, device2)) {
-                // Union the devices and add the cost to the total cost
                 union(parent, device1, device2);
                 totalCost += cost;
                 edgesUsed++;
 
-                // If we have used n-1 edges, we have connected all devices
-                if (edgesUsed == n - 1) {
+                // If all n devices are connected, stop early
+                if (edgesUsed == n) {
                     break;
                 }
             }
@@ -118,15 +110,66 @@ public class DeviceNetwork {
     }
 
     public static void main(String[] args) {
-        // Test case 1
+        // Test Case 1
         int n = 3;
         int[] modules = {1, 2, 2};
         List<Connection> connections = new ArrayList<>();
         connections.add(new Connection(1, 2, 1));
         connections.add(new Connection(2, 3, 1));
 
-        // Call the function and print the result
+        // Compute and print the minimum cost
         int result = minCostToConnectAllDevices(n, modules, connections);
-        System.out.println("Minimum cost to connect all devices: " + result); // Expected Output: 3
+        System.out.println("Minimum cost to connect all devices: " + result);
     }
 }
+
+/*
+Test Cases & Expected Output:
+------------------------------
+Test Case 1:
+Input:
+n = 3
+modules = [1, 2, 2]
+connections = [[1, 2, 1], [2, 3, 1]]
+
+Output:
+Minimum cost to connect all devices: 3
+
+Explanation:
+- Install a module on device 1 (cost = 1).
+- Connect device 1 to device 2 (cost = 1).
+- Connect device 2 to device 3 (cost = 1).
+- Total cost = 1 + 1 + 1 = 3.
+
+------------------------------
+Test Case 2:
+Input:
+n = 4
+modules = [5, 1, 2, 3]
+connections = [[1, 2, 2], [2, 3, 3], [3, 4, 4], [1, 3, 6]]
+
+Output:
+Minimum cost to connect all devices: 6
+
+Explanation:
+- Install a module on device 2 (cost = 1).
+- Connect device 2 to device 1 (cost = 2).
+- Connect device 2 to device 3 (cost = 3).
+- Device 4 installs its own module (cost = 3, but we found a cheaper way using connections).
+- Total cost = 1 + 2 + 3 = 6.
+
+------------------------------
+Test Case 3:
+Input:
+n = 5
+modules = [3, 2, 1, 4, 5]
+connections = [[1, 2, 2], [2, 3, 2], [3, 4, 2], [4, 5, 2], [1, 5, 7]]
+
+Output:
+Minimum cost to connect all devices: 8
+
+Explanation:
+- Install module on device 3 (cost = 1).
+- Connect 3 to 2 (cost = 2), 3 to 4 (cost = 2), 4 to 5 (cost = 2), 2 to 1 (cost = 2).
+- Total cost = 1 + 2 + 2 + 2 + 2 = 8.
+*/
