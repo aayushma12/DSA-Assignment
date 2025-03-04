@@ -14,6 +14,8 @@
 // blocks, active block, and sidebar information. The game efficiently manages blocks
 // using a stack for placed blocks and a queue for upcoming blocks, ensuring smooth gameplay
 
+
+// Import necessary Java Swing and AWT classes for GUI and event handling
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -22,21 +24,28 @@ import java.util.Queue;
 import java.util.Stack;
 
 public class TetrisGame extends JPanel implements ActionListener {
+     // Constants for game board size and block size
     private final int BOARD_WIDTH = 10;
     private final int BOARD_HEIGHT = 20;
     private final int BLOCK_SIZE = 30;
+    // Timer to control block movement
     private Timer timer;
     private boolean gameOver = false;
     private int score = 0;
     private long startTime;
+     // 2D array representing the game board (grid)
     private int[][] board = new int[BOARD_HEIGHT][BOARD_WIDTH];
+    // The current falling block and its position
     private int[][] currentBlock;
     private int currentX = 4, currentY = 0;
+    // Stack to store placed blocks and queue for upcoming blocks
     private Stack<int[][]> placedBlocks = new Stack<>();
     private Queue<int[][]> nextBlocks = new LinkedList<>();
+      // Speed settings for normal and fast drops
     private final int NORMAL_SPEED = 500;
     private final int FAST_SPEED = 100;
 
+    // Array of predefined Tetromino shapes
     private final int[][][] SHAPES = {
         {{1, 1, 1, 1}},
         {{1, 1}, {1, 1}},
@@ -47,11 +56,16 @@ public class TetrisGame extends JPanel implements ActionListener {
         {{1, 1, 1}, {0, 0, 1}}
     };
 
+    // Constructor to set up the game
+
     public TetrisGame() {
+        // Set game window size and background color
         setPreferredSize(new Dimension(BOARD_WIDTH * BLOCK_SIZE + 150, BOARD_HEIGHT * BLOCK_SIZE));
         setBackground(Color.BLACK);
         setFocusable(true);
         requestFocusInWindow();
+
+        // Add keyboard controls for player movement
 
         addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
@@ -60,24 +74,29 @@ public class TetrisGame extends JPanel implements ActionListener {
 
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-                    timer.setDelay(NORMAL_SPEED);
+                    timer.setDelay(NORMAL_SPEED);// Reset speed when down key is released
                 }
             }
         });
 
+        // Initialize the first set of blocks
         for (int i = 0; i < 3; i++) nextBlocks.add(getRandomBlock());
         currentBlock = nextBlocks.poll();
         nextBlocks.add(getRandomBlock());
+
+              // Start the game timer
 
         timer = new Timer(NORMAL_SPEED, this);
         startTime = System.currentTimeMillis();
         timer.start();
     }
 
+    // Method to get a random Tetromino shape
     private int[][] getRandomBlock() {
         return SHAPES[(int) (Math.random() * SHAPES.length)];
     }
 
+     // Timer event to move the block down automatically
     public void actionPerformed(ActionEvent e) {
         if (!gameOver) {
             currentY++;
@@ -99,6 +118,7 @@ public class TetrisGame extends JPanel implements ActionListener {
         }
     }
 
+    // Handle keyboard inputs for movement and rotation
     private void handleKeyPress(int keyCode) {
         if (keyCode == KeyEvent.VK_LEFT) moveLeft();
         if (keyCode == KeyEvent.VK_RIGHT) moveRight();
